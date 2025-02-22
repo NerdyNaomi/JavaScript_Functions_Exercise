@@ -15,6 +15,8 @@ function validateNumber() {
     countTo = Number(input);
     if (isNaN(countTo) || countTo === "") {
       console.log(`Your number, ${input}, is not valid. Please try again.`);
+    } else if (countTo == 0) {
+      console.log(`There aren't any odd numbers between 0 and 0.`)
     } else {
       console.log(
         `Your number, ${countTo}, is valid! \nHere are all the odd numbers from 0 to ${countTo}:`
@@ -33,7 +35,7 @@ function printOdds(count) {
   }
 
   for (let i = 0; i <= count; i++) {
-    if (i % 2 !== 0) {
+    if (i % 2 !== 0 && count > 0) {
       console.log(`${i}`);
     } else if (i % 2 !== 0 && count < 0) {
       console.log(`-${i}`);
@@ -69,9 +71,12 @@ function confirmName() {
 }
 
 function validateAge() {
-  let givenAge = prompt(`How old are you?`);
-  let age = Number(givenAge);
+  let givenAge;
+  let age;
   do {
+    givenAge = prompt(`How old are you?`);
+    age = Number(givenAge);
+
     if (isNaN(age) || givenAge === "") {
       console.log(
         `Sorry, ${givenAge} is not a valid number, please try again.`
@@ -193,7 +198,6 @@ function triangleValid(a, b, c) {
     triType = "";
     return;
   } else {
-    console.log(`else`);
     if (a == b && b == c && c == a) {
       triType = `equilateral`;
     } else if ((a == b && c != a) || (b == c && a != b) || (c == a && b != c)) {
@@ -231,38 +235,66 @@ let usage;
 //lim = data alotted per month, d = days into the current pay period, u = amount of data used so far,
 function dataUsage(lim, d, u) {
   let daysRem = 30 - d;
-  let limAvg = (lim / 30).toFixed(2);
-  let dataRemaining = (lim - u).toFixed(2);
-  let usageAvg = (u / d).toFixed(2);
-  let usageDiff = Math.abs(u / d - lim / 30).toFixed(2);
-  let usageProjection = Math.abs(lim - (u / d) * 30).toFixed(2);
-  let maxDailyUse = ((lim - u) / (30 - d)).toFixed(2);
+  let limAvg = lim / 30;
+  let dataRemaining = lim - u;
+  let usageAvg = u / d;
+  let usageDiff = Math.abs(u / d - lim / 30);
+  let usageProjection = Math.abs(u / d) * 30;
+  let usageProjectionDifference = Math.abs(lim - usageProjection);
+  let maxDailyUse = (lim - u) / (30 - d);
 
   let s = `s`;
+  let gbDay = `GB/day.`;
   let usageLevels = `exceeds`;
-  let usageLevel = `exceed`;
   let usageRecommendation = `To stay below your data plan, use no more than`;
 
-  if (Number(usageAvg) < Number(limAvg)) {
+  if (usageAvg < limAvg) {
     usageLevels = `falls below`;
-
-    usageLevel = `fall below`;
-
     usageRecommendation = `To make the most of your data plan, use about`;
+  }
+
+  if (usageProjection > lim) {
+    usageRecommendation = `You are using more data than the plan allows in the 30-day period.\nConsider upgrading your plan.`;
+    maxDailyUse = ``;
+    gbDay = ``;
+  }
+
+  if (
+    usageProjection >= lim * 0.75 &&
+    usageProjection <= lim
+  ) {
+    usageRecommendation = `You are using almost as much data as your plan allows for the 30-day period.\nSince you're so close, you may want to upgrade your plan.`;
+    maxDailyUse = ``;
+    gbDay = ``;
+  }
+
+  if (
+    usageProjection <= lim * 0.25 &&
+    usageProjection >= 0
+  ) {
+    usageRecommendation = `You are using less data than the plan allows for the 30-day period.\nConsider downgrading your plan, you're likely paying for data that you don't use.`;
+    maxDailyUse = ``;
+    gbDay = ``;
+  }
+
+  if (dataRemaining <= 0) {
+    dataRemaining = 0.0;
   }
 
   if (daysRem == 1) {
     s = ``;
   }
+
   console.log(`
     ${d} days used, ${daysRem} day${s} remaining.
-    \nPlan GB per 30 day period: ${lim}
-    \nPlan average daily allowance: ${limAvg}
-    \nActual data used: ${u}
-    \nActual average daily use: ${usageAvg}
-    \nYour use ${usageLevels} your plan's average daily allowance by ${usageDiff} GB/day.
-    \nContinuing this level of usage, you'll ${usageLevel} your current data plan by ${usageProjection} GB.
-    \n${usageRecommendation} ${maxDailyUse} GB/day.
+    \nPlan GB per 30 day period: ${lim} GB
+    \nPlan average daily allowance: ${limAvg.toFixed(2)} GB
+    \nActual data used: ${u} GB
+    \nActual average daily use: ${usageAvg.toFixed(2)} GB
+    \nData remaining in plan: ${dataRemaining.toFixed(2)} GB
+    \nYour average daily use ${usageLevels} your plan's average daily allowance by ${usageDiff.toFixed(2)} GB/day.
+    \nContinuing this level of usage, you'll use ${usageProjection.toFixed(2)} GB, which ${usageLevels} your current data plan by ${usageProjectionDifference.toFixed(2)} GB.
+    \n${usageRecommendation} ${maxDailyUse ? maxDailyUse.toFixed(2) + ` ` + gbDay : ``}
     `);
 }
 
@@ -270,37 +302,72 @@ console.log(
   `I'll help you calculate your remaining data usage if you answer a few questions for me.`
 );
 
-planLimit = Number(
-  prompt(`What is your data limit, in GB, for each 30 day period?`)
+//Limit
+do {
+  planLimit = Number(
+    prompt(`What is your data limit, in GB, for each 30 day period?`)
+  );
+  if (planLimit < 0) {
+    console.log(`
+      The plan limit cannot be a negative number.
+      `);
+  } else if (planLimit == `` || isNaN(planLimit) || planLimit % 1 !== 0) {
+    console.log(`
+      The plan limit must be a whole number in GB.
+      `);
+  }
+} while (
+  planLimit == `` ||
+  isNaN(planLimit) ||
+  planLimit % 1 !== 0 ||
+  planLimit < 0
 );
 
-day = Number(
-  prompt(`How many days have passed since the start of the current period?`)
+//Days
+do {
+  day = Number(
+    prompt(`How many days have passed since the start of the current period?`)
+  );
+  if (day >= 30) {
+    console.log(
+      `This calculator works based on a 30-day period. Please enter a number between 1 and 29.`
+    );
+  } else if (day <= 2) {
+    console.log(
+      `There is not enough data to accurately project future usage.\nThere needs to be at least 3 days of data.`
+    );
+  } else if (day < 0) {
+    console.log(`
+      The day cannot be a negative number.
+      `);
+  } else if (day % 1 !== 0 || isNaN(day)) {
+    console.log(`
+      The days that have passed must be a whole number.
+      `);
+  }
+} while (
+  day == `` ||
+  day >= 30 ||
+  day <= 2 ||
+  day < 0 ||
+  day % 1 !== 0 ||
+  isNaN(day)
 );
 
-usage = Number(prompt(`How much data, in GB, have you used so far?`));
+//Usage
+do {
+  usage = Number(prompt(`How much data, in GB, have you used so far?`));
 
-if (day >= 30) {
-  console.log(
-    `This calculator works based on a 30-day period. Please enter a number between 1 and 29.`
-  );
-} else if (day == 0 || day == 1 || day == 2) {
-  console.log(
-    `There is not enough data to accurately project future usage.\nThere needs to be at least 3 days of data. The more days have passed, the more accurate projections will be.`
-  );
-} else if (day < 0) {
-  console.log(`
-    The day cannot be a negative number.
-    `);
-} else if (day % 1 !== 0 || day === NaN) {
-  console.log(`
-    The days that have passed must be a whole number.
-    `);
-} else if (usage > planLimit) {
-  console.log(
-    `You have used more data than the plan allows for the whole 30-day period.\nConsider upgrading your plan or finding a way to use less data.`
-  );
-  dataUsage(planLimit, day, usage);
-} else {
-  dataUsage(planLimit, day, usage);
-}
+  if (usage < 0) {
+    console.log(`
+      Usage cannot be a negative number.
+      `);
+  } else if (usage == `` || isNaN(usage) || usage % 1 !== 0) {
+    console.log(`
+      Usage must be a whole number in GB.
+      `);
+  }
+} while (usage < 0 || usage == `` || isNaN(usage) || usage % 1 !== 0);
+
+//Run
+dataUsage(planLimit, day, usage);
